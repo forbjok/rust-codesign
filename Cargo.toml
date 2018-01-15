@@ -1,0 +1,6 @@
+[package]
+name = "codesign"
+version = "0.1.0"
+authors = ["Kjartan F. Kvamme <forbjok@gmail.com>"]
+
+[dependencies]
