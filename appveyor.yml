@@ -1,0 +1,18 @@
+environment:
+  matrix:
+    - APPVEYOR_RUST_CHANNEL: stable
+    - APPVEYOR_RUST_CHANNEL: nightly
+
+install:
+  # Install rust, x86_64-pc-windows-msvc host
+  - curl -sSf -o rustup-init.exe https://win.rustup.rs/
+  - rustup-init.exe -y --default-host x86_64-pc-windows-msvc --default-toolchain %APPVEYOR_RUST_CHANNEL%
+  - set PATH=C:\Users\appveyor\.cargo\bin;%PATH%
+  - rustc -vV
+  - cargo -vV
+
+build_script:
+  - cargo build
+
+test_script:
+  - cargo test
