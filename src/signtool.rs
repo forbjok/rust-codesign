@@ -4,7 +4,51 @@ use bitness::{self, Bitness};
 use winreg::RegKey;
 use winreg::enums::{HKEY_LOCAL_MACHINE, KEY_READ, KEY_WOW64_32KEY};
 
-pub fn locate_signtool() -> Result<PathBuf, &'static str> {
+use ::*;
+
+pub struct SignTool {
+    signtool_path: PathBuf,
+}
+
+impl SignTool {
+    pub fn locate_latest() -> Result<SignTool, &'static str> {
+        Ok(SignTool {
+            signtool_path: locate_signtool()?,
+        })
+    }
+
+    pub fn sign<P: AsRef<Path>>(&self, path: P, params: &SignParams) -> Result<(), &'static str> {
+        use std::process::Command;
+
+        // Convert path to string reference, as we need to pass it as a commandline parameter to signtool
+        let path_str = path.as_ref().to_str().unwrap();
+
+        // Construct SignTool command
+        let mut cmd = Command::new(&self.signtool_path);
+        cmd.arg("sign");
+        cmd.args(&["/fd", &params.digest_algorithm]);
+        cmd.args(&["/sha1", &params.certificate_thumbprint]);
+        cmd.args(&["/t", &params.timestamp_url]);
+        cmd.arg(path_str);
+
+        debug!("Executing SignTool command: {:?}", cmd);
+
+        // Execute SignTool command
+        let output = cmd.output().map_err(|_| "Error executing SignTool!")?;
+
+        debug!("Output: {:?}", &output);
+
+        if !output.status.success() {
+            error!("{}", String::from_utf8(output.stderr).unwrap());
+            return Err("Error signing file");
+        }
+
+        // We good.
+        Ok(())
+    }
+}
+
+fn locate_signtool() -> Result<PathBuf, &'static str> {
     let installed_roots_key_path = Path::new(r"SOFTWARE\Microsoft\Windows Kits\Installed Roots");
     debug!("Opening 'Installed Roots' key: {:?}", installed_roots_key_path);
 

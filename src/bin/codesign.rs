@@ -28,6 +28,14 @@ fn main() {
                 .multiple(true),
         )
         .arg(
+            Arg::with_name("digest-algorithm")
+                .short("d")
+                .takes_value(true)
+                .default_value("sha256")
+                .required(true)
+                .help("Specify digest algorithm"),
+        )
+        .arg(
             Arg::with_name("certificate-thumbprint")
                 .short("c")
                 .takes_value(true)
@@ -58,11 +66,19 @@ fn main() {
     debug!("Debug logging enabled.");
 
     let files = matches.values_of("file").expect("No files specified!").into_iter();
+    let digest_algorithm: &str = matches.value_of("digest-algorithm").unwrap();
     let certificate_thumbprint: &str = matches.value_of("certificate-thumbprint").unwrap();
     let timestamp_url: &str = matches.value_of("timestamp-url").unwrap();
 
-    // Initialize code signing
-    let codesign = codesign::CodeSign::new(certificate_thumbprint, timestamp_url).expect("Error initializing code signing!");
+    // Locate latest SignTool
+    let signtool = codesign::SignTool::locate_latest().expect("Error locating SignTool!");
+
+    // Set up signing parameters
+    let sign_params = codesign::SignParams {
+        digest_algorithm: digest_algorithm.to_owned(),
+        certificate_thumbprint: certificate_thumbprint.to_owned(),
+        timestamp_url: timestamp_url.to_owned(),
+    };
 
     let mut error_count: i32 = 0;
 
@@ -70,7 +86,7 @@ fn main() {
     for file in files {
         print!("Signing {}... ", file);
 
-        match codesign.sign(file) {
+        match signtool.sign(file, &sign_params) {
             Ok(()) => println!("OK."),
             Err(_) => {
                 error_count += 1;
