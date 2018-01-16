@@ -7,6 +7,8 @@ extern crate codesign;
 
 use log::LevelFilter;
 
+use codesign::{SignParams, SignTool, CodeSignError};
+
 fn main() {
     use std::process;
 
@@ -71,34 +73,46 @@ fn main() {
     let timestamp_url: &str = matches.value_of("timestamp-url").unwrap();
 
     // Locate latest SignTool
-    let signtool = codesign::SignTool::locate_latest().expect("Error locating SignTool!");
+    let signtool = match SignTool::locate_latest() {
+        Ok(v) => v,
+        Err(err) => {
+            eprintln!("Couldn't locate SignTool: {}", err.to_string());
+            process::exit(2);
+        }
+    };
 
     // Set up signing parameters
-    let sign_params = codesign::SignParams {
+    let sign_params = SignParams {
         digest_algorithm: digest_algorithm.to_owned(),
         certificate_thumbprint: certificate_thumbprint.to_owned(),
         timestamp_url: timestamp_url.to_owned(),
     };
 
     let mut error_count: i32 = 0;
+    let mut last_signtool_error_exit_code: i32 = 0;
 
     // Sign specified files
     for file in files {
-        print!("Signing {}... ", file);
+        eprint!("Signing {}... ", file);
 
         match signtool.sign(file, &sign_params) {
-            Ok(()) => println!("OK."),
-            Err(_) => {
+            Ok(()) => eprintln!("OK."),
+            Err(err) => {
                 error_count += 1;
+                eprintln!("{}", err.to_string());
 
-                println!("Error!");
+                /* If it's a SignTool error, set last SignTool error exit code. */
+                match err {
+                    CodeSignError::SignToolError { exit_code, .. } => last_signtool_error_exit_code = exit_code,
+                    _ => { }
+                };
             }
         };
     }
 
     if error_count > 0 {
         // If there were errors, return a non-zero exit code
-        process::exit(101);
+        process::exit(last_signtool_error_exit_code);
     }
 }
 

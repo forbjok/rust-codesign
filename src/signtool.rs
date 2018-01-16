@@ -11,13 +11,13 @@ pub struct SignTool {
 }
 
 impl SignTool {
-    pub fn locate_latest() -> Result<SignTool, &'static str> {
+    pub fn locate_latest() -> CodeSignResult<SignTool> {
         Ok(SignTool {
             signtool_path: locate_signtool()?,
         })
     }
 
-    pub fn sign<P: AsRef<Path>>(&self, path: P, params: &SignParams) -> Result<(), &'static str> {
+    pub fn sign<P: AsRef<Path>>(&self, path: P, params: &SignParams) -> CodeSignResult<()> {
         use std::process::Command;
 
         // Convert path to string reference, as we need to pass it as a commandline parameter to signtool
@@ -34,13 +34,18 @@ impl SignTool {
         debug!("Executing SignTool command: {:?}", cmd);
 
         // Execute SignTool command
-        let output = cmd.output().map_err(|_| "Error executing SignTool!")?;
+        let output = cmd.output()?;
 
         debug!("Output: {:?}", &output);
 
         if !output.status.success() {
-            error!("{}", String::from_utf8(output.stderr).unwrap());
-            return Err("Error signing file");
+            let stderr = String::from_utf8_lossy(output.stderr.as_slice()).into_owned();
+            error!("{}", &stderr);
+
+            Err(CodeSignError::SignToolError {
+                exit_code: output.status.code().unwrap_or(-1),
+                stderr: stderr,
+            })?;
         }
 
         // We good.
@@ -48,28 +53,37 @@ impl SignTool {
     }
 }
 
-fn locate_signtool() -> Result<PathBuf, &'static str> {
-    let installed_roots_key_path = Path::new(r"SOFTWARE\Microsoft\Windows Kits\Installed Roots");
-    debug!("Opening 'Installed Roots' key: {:?}", installed_roots_key_path);
+fn locate_signtool() -> CodeSignResult<PathBuf> {
+    const INSTALLED_ROOTS_REGKEY_PATH: &'static str = r"SOFTWARE\Microsoft\Windows Kits\Installed Roots";
+    const KITS_ROOT_REGVALUE_NAME: &'static str = r"KitsRoot10";
+
+    let installed_roots_key_path = Path::new(INSTALLED_ROOTS_REGKEY_PATH);
 
     // Open 32-bit HKLM "Installed Roots" key
     let installed_roots_key = RegKey::predef(HKEY_LOCAL_MACHINE)
         .open_subkey_with_flags(
             installed_roots_key_path,
             KEY_READ | KEY_WOW64_32KEY
-        ).map_err(|_| "Error opening Software registry key!")?;
+        ).map_err(|_| format!("Error opening registry key: {}", INSTALLED_ROOTS_REGKEY_PATH))?;
 
-    debug!("Getting Windows 10 Kits root path.");
-    let kits_root_10_path: String = installed_roots_key.get_value("KitsRoot10").map_err(|_| "Error getting Windows 10 Kits root path!")?;
-    debug!("Windows 10 Kits root path found: {}", &kits_root_10_path);
+    // Get the Windows SDK root path
+    let kits_root_10_path: String = installed_roots_key.get_value(KITS_ROOT_REGVALUE_NAME)
+        .map_err(|_| format!("Error getting {} value from registry!", KITS_ROOT_REGVALUE_NAME))?;
 
+    // Construct Windows SDK bin path
     let kits_root_10_bin_path = Path::new(&kits_root_10_path).join("bin");
 
     let mut installed_kits: Vec<String> = Vec::new();
     let mut kit_bin_paths: Vec<PathBuf> = Vec::new();
 
-    for k in installed_roots_key.enum_keys() {
-        let kit = k.map_err(|_| "No kit!")?;
+    for kit in installed_roots_key.enum_keys() {
+        let kit = match kit {
+            Ok(v) => v,
+            Err(err) => {
+                error!("Error enumerating installed root keys: {}", err.to_string());
+                continue;
+            }
+        };
 
         debug!("Found installed kit: {}", kit);
         installed_kits.push(kit);
@@ -87,14 +101,15 @@ fn locate_signtool() -> Result<PathBuf, &'static str> {
         kit_bin_paths.push(kit_bin_path.to_path_buf());
     }
 
-    /* Add kits root bin path. For Windows SDK 10 versions earlier than v10.0.15063.468, signtool will be located there. */
+    /* Add kits root bin path.
+       For Windows SDK 10 versions earlier than v10.0.15063.468, signtool will be located there. */
     kit_bin_paths.push(kits_root_10_bin_path.to_path_buf());
 
     // Choose which version of SignTool to use based on OS bitness
     let arch_dir = match bitness::os_bitness() {
         Bitness::X86_32 => "x86",
         Bitness::X86_64 => "x64",
-        _ => panic!("Unsupported OS!")
+        _ => Err("Unsupported OS!".to_owned())?
     };
 
     /* Iterate through all bin paths, checking for existence of a SignTool executable. */
@@ -112,5 +127,5 @@ fn locate_signtool() -> Result<PathBuf, &'static str> {
     }
 
     error!("No SignTool found!");
-    Err("No SignTool found!")
+    Err("No SignTool found!".to_owned())?
 }
