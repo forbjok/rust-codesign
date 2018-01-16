@@ -5,7 +5,7 @@ authors = ["Kjartan F. Kvamme <forbjok@gmail.com>"]
 description = "Microsoft code signing library (and utility) for Rust"
 
 [dependencies]
-bitness = "~0.2.0"
+bitness = "~0.3.0"
 chrono = "~0.4.0"
 clap = "~2.29.1"
 failure = "~0.1.1"

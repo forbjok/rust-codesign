@@ -105,7 +105,7 @@ fn locate_signtool() -> CodeSignResult<PathBuf> {
     kit_bin_paths.push(kits_root_10_bin_path.to_path_buf());
 
     // Choose which version of SignTool to use based on OS bitness
-    let arch_dir = match bitness::os_bitness() {
+    let arch_dir = match bitness::os_bitness()? {
         Bitness::X86_32 => "x86",
         Bitness::X86_64 => "x64",
         _ => Err("Unsupported OS!".to_owned())?

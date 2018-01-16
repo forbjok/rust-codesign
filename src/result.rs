@@ -1,6 +1,8 @@
 use std::io;
 use std::result;
 
+use bitness::BitnessError;
+
 #[derive(Debug, Fail)]
 pub enum CodeSignError {
     #[fail(display = "I/O error: {}", description)]
@@ -31,6 +33,14 @@ impl From<String> for CodeSignError {
 impl From<io::Error> for CodeSignError {
     fn from(err: io::Error) -> Self {
         CodeSignError::IoError {
+            description: err.to_string(),
+        }
+    }
+}
+
+impl From<BitnessError> for CodeSignError {
+    fn from(err: BitnessError) -> Self {
+        CodeSignError::Error {
             description: err.to_string(),
         }
     }
