@@ -1,4 +1,4 @@
-# Codesign [![Crates.io](https://img.shields.io/crates/v/codesign.svg)]()
+# Codesign [![Build status](https://ci.appveyor.com/api/projects/status/ollapsvtxks5ngu5?svg=true)](https://ci.appveyor.com/project/forbjok/rust-codesign) [![Crates.io](https://img.shields.io/crates/v/codesign.svg)](https://crates.io/crates/codesign)
 
 Microsoft code signing library (and utility) for Rust.
 
