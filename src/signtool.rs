@@ -73,21 +73,17 @@ fn locate_signtool() -> CodeSignResult<PathBuf> {
     // Construct Windows SDK bin path
     let kits_root_10_bin_path = Path::new(&kits_root_10_path).join("bin");
 
-    let mut installed_kits: Vec<String> = Vec::new();
-    let mut kit_bin_paths: Vec<PathBuf> = Vec::new();
-
-    for kit in installed_roots_key.enum_keys() {
-        let kit = match kit {
-            Ok(v) => v,
+    let mut installed_kits: Vec<String> = installed_roots_key.enum_keys()
+        /* Report and ignore errors, pass on values. */
+        .filter_map(|res| match res {
+            Ok(v) => Some(v),
             Err(err) => {
                 error!("Error enumerating installed root keys: {}", err.to_string());
-                continue;
+                None
             }
-        };
-
-        debug!("Found installed kit: {}", kit);
-        installed_kits.push(kit);
-    }
+        })
+        .inspect(|kit| debug!("Found installed kit: {}", kit))
+        .collect();
 
     // Sort installed kits
     installed_kits.sort();
@@ -95,11 +91,9 @@ fn locate_signtool() -> CodeSignResult<PathBuf> {
     /* Iterate through installed kit version keys in reverse (from newest to oldest),
        adding their bin paths to the list.
        Windows SDK 10 v10.0.15063.468 and later will have their signtools located there. */
-    for installed_kit in installed_kits.iter().rev() {
-        let kit_bin_path = kits_root_10_bin_path.join(&installed_kit);
-
-        kit_bin_paths.push(kit_bin_path.to_path_buf());
-    }
+    let mut kit_bin_paths: Vec<PathBuf> = installed_kits.iter().rev()
+        .map(|kit| kits_root_10_bin_path.join(kit).to_path_buf())
+        .collect();
 
     /* Add kits root bin path.
        For Windows SDK 10 versions earlier than v10.0.15063.468, signtool will be located there. */
