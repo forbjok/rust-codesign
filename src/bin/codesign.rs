@@ -48,7 +48,6 @@ fn main() {
             Arg::with_name("timestamp-url")
                 .short("t")
                 .takes_value(true)
-                .required(true)
                 .help("Specify timestamp URL"),
         )
         .get_matches();
@@ -70,7 +69,7 @@ fn main() {
     let files = matches.values_of("file").expect("No files specified!").into_iter();
     let digest_algorithm: &str = matches.value_of("digest-algorithm").unwrap();
     let certificate_thumbprint: &str = matches.value_of("certificate-thumbprint").unwrap();
-    let timestamp_url: &str = matches.value_of("timestamp-url").unwrap();
+    let timestamp_url: Option<&str> = matches.value_of("timestamp-url");
 
     // Locate latest SignTool
     let signtool = match SignTool::locate_latest() {
@@ -85,7 +84,10 @@ fn main() {
     let sign_params = SignParams {
         digest_algorithm: digest_algorithm.to_owned(),
         certificate_thumbprint: certificate_thumbprint.to_owned(),
-        timestamp_url: timestamp_url.to_owned(),
+        timestamp_url: match timestamp_url {
+            Some(v) => Some(v.to_owned()),
+            None => None
+        },
     };
 
     let mut error_count: i32 = 0;

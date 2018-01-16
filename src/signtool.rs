@@ -28,7 +28,12 @@ impl SignTool {
         cmd.arg("sign");
         cmd.args(&["/fd", &params.digest_algorithm]);
         cmd.args(&["/sha1", &params.certificate_thumbprint]);
-        cmd.args(&["/t", &params.timestamp_url]);
+
+        match params.timestamp_url {
+            Some(ref v) => { cmd.args(&["/t", v]); },
+            None => { }
+        };
+
         cmd.arg(path_str);
 
         debug!("Executing SignTool command: {:?}", cmd);
