@@ -76,7 +76,7 @@ fn main() {
         Ok(v) => v,
         Err(err) => {
             eprintln!("Couldn't locate SignTool: {}", err.to_string());
-            process::exit(2);
+            process::exit(2)
         }
     };
 
@@ -104,10 +104,9 @@ fn main() {
                 eprintln!("{}", err.to_string());
 
                 /* If it's a SignTool error, set last SignTool error exit code. */
-                match err {
-                    CodeSignError::SignToolError { exit_code, .. } => last_signtool_error_exit_code = exit_code,
-                    _ => { }
-                };
+                if let CodeSignError::SignToolError { exit_code, .. } = err {
+                    last_signtool_error_exit_code = exit_code;
+                }
             }
         };
     }

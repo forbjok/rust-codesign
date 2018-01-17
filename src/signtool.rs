@@ -29,10 +29,9 @@ impl SignTool {
         cmd.args(&["/fd", &params.digest_algorithm]);
         cmd.args(&["/sha1", &params.certificate_thumbprint]);
 
-        match params.timestamp_url {
-            Some(ref v) => { cmd.args(&["/t", v]); },
-            None => { }
-        };
+        if let Some(ref timestamp_url) = params.timestamp_url {
+            cmd.args(&["/t", timestamp_url]);
+        }
 
         cmd.arg(path_str);
 
@@ -59,8 +58,8 @@ impl SignTool {
 }
 
 fn locate_signtool() -> CodeSignResult<PathBuf> {
-    const INSTALLED_ROOTS_REGKEY_PATH: &'static str = r"SOFTWARE\Microsoft\Windows Kits\Installed Roots";
-    const KITS_ROOT_REGVALUE_NAME: &'static str = r"KitsRoot10";
+    const INSTALLED_ROOTS_REGKEY_PATH: &str = r"SOFTWARE\Microsoft\Windows Kits\Installed Roots";
+    const KITS_ROOT_REGVALUE_NAME: &str = r"KitsRoot10";
 
     let installed_roots_key_path = Path::new(INSTALLED_ROOTS_REGKEY_PATH);
 
@@ -112,7 +111,7 @@ fn locate_signtool() -> CodeSignResult<PathBuf> {
     };
 
     /* Iterate through all bin paths, checking for existence of a SignTool executable. */
-    for kit_bin_path in kit_bin_paths.iter() {
+    for kit_bin_path in &kit_bin_paths {
         /* Construct SignTool path. */
         let signtool_path = kit_bin_path.join(arch_dir).join("signtool.exe");
 
