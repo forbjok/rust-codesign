@@ -2,8 +2,8 @@ use std::path::{Path, PathBuf};
 
 use bitness::{self, Bitness};
 use log::{debug, error, info};
-use winreg::RegKey;
 use winreg::enums::{HKEY_LOCAL_MACHINE, KEY_READ, KEY_WOW64_32KEY};
+use winreg::RegKey;
 
 use crate::*;
 
@@ -66,19 +66,19 @@ fn locate_signtool() -> Result<PathBuf, CodeSignError> {
 
     // Open 32-bit HKLM "Installed Roots" key
     let installed_roots_key = RegKey::predef(HKEY_LOCAL_MACHINE)
-        .open_subkey_with_flags(
-            installed_roots_key_path,
-            KEY_READ | KEY_WOW64_32KEY
-        ).map_err(|_| format!("Error opening registry key: {}", INSTALLED_ROOTS_REGKEY_PATH))?;
+        .open_subkey_with_flags(installed_roots_key_path, KEY_READ | KEY_WOW64_32KEY)
+        .map_err(|_| format!("Error opening registry key: {}", INSTALLED_ROOTS_REGKEY_PATH))?;
 
     // Get the Windows SDK root path
-    let kits_root_10_path: String = installed_roots_key.get_value(KITS_ROOT_REGVALUE_NAME)
+    let kits_root_10_path: String = installed_roots_key
+        .get_value(KITS_ROOT_REGVALUE_NAME)
         .map_err(|_| format!("Error getting {} value from registry!", KITS_ROOT_REGVALUE_NAME))?;
 
     // Construct Windows SDK bin path
     let kits_root_10_bin_path = Path::new(&kits_root_10_path).join("bin");
 
-    let mut installed_kits: Vec<String> = installed_roots_key.enum_keys()
+    let mut installed_kits: Vec<String> = installed_roots_key
+        .enum_keys()
         /* Report and ignore errors, pass on values. */
         .filter_map(|res| match res {
             Ok(v) => Some(v),
@@ -94,21 +94,23 @@ fn locate_signtool() -> Result<PathBuf, CodeSignError> {
     installed_kits.sort();
 
     /* Iterate through installed kit version keys in reverse (from newest to oldest),
-       adding their bin paths to the list.
-       Windows SDK 10 v10.0.15063.468 and later will have their signtools located there. */
-    let mut kit_bin_paths: Vec<PathBuf> = installed_kits.iter().rev()
+    adding their bin paths to the list.
+    Windows SDK 10 v10.0.15063.468 and later will have their signtools located there. */
+    let mut kit_bin_paths: Vec<PathBuf> = installed_kits
+        .iter()
+        .rev()
         .map(|kit| kits_root_10_bin_path.join(kit).to_path_buf())
         .collect();
 
     /* Add kits root bin path.
-       For Windows SDK 10 versions earlier than v10.0.15063.468, signtool will be located there. */
+    For Windows SDK 10 versions earlier than v10.0.15063.468, signtool will be located there. */
     kit_bin_paths.push(kits_root_10_bin_path.to_path_buf());
 
     // Choose which version of SignTool to use based on OS bitness
     let arch_dir = match bitness::os_bitness()? {
         Bitness::X86_32 => "x86",
         Bitness::X86_64 => "x64",
-        _ => Err("Unsupported OS!".to_owned())?
+        _ => Err("Unsupported OS!".to_owned())?,
     };
 
     /* Iterate through all bin paths, checking for existence of a SignTool executable. */

@@ -9,10 +9,7 @@ pub enum CodeSignError {
     Io(#[from] io::Error),
 
     #[error("SignTool exited with code {exit_code}: {stderr}")]
-    SignToolError {
-        exit_code: i32,
-        stderr: String,
-    },
+    SignToolError { exit_code: i32, stderr: String },
 
     #[error("{0}")]
     Other(String),

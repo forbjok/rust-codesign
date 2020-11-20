@@ -1,7 +1,7 @@
 use log::{debug, LevelFilter};
 use structopt::StructOpt;
 
-use codesign::{SignParams, SignTool, CodeSignError};
+use codesign::{CodeSignError, SignParams, SignTool};
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "CodeSign", version = env!("CARGO_PKG_VERSION"), author = env!("CARGO_PKG_AUTHORS"))]
@@ -10,9 +10,18 @@ struct Opt {
     verbosity: u8,
     #[structopt(name = "file", help = "Files to sign")]
     files: Vec<String>,
-    #[structopt(name = "digest-algorithm", short = "d", help = "Specify digest algorithm", default_value = "sha256")]
+    #[structopt(
+        name = "digest-algorithm",
+        short = "d",
+        help = "Specify digest algorithm",
+        default_value = "sha256"
+    )]
     digest_algorithm: String,
-    #[structopt(name = "certificate-thumbprint", short = "c", help = "Specify certificate thumbprint (SHA1)")]
+    #[structopt(
+        name = "certificate-thumbprint",
+        short = "c",
+        help = "Specify certificate thumbprint (SHA1)"
+    )]
     certificate_thumbprint: String,
     #[structopt(name = "timestamp-url", short = "t", help = "Specify timestamp URL")]
     timestamp_url: Option<String>,
@@ -59,7 +68,7 @@ fn main() {
         certificate_thumbprint: certificate_thumbprint.to_owned(),
         timestamp_url: match timestamp_url {
             Some(v) => Some(v.to_owned()),
-            None => None
+            None => None,
         },
     };
 
