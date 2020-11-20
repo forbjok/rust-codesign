@@ -1,68 +1,48 @@
 use log::{debug, LevelFilter};
+use structopt::StructOpt;
 
 use codesign::{SignParams, SignTool, CodeSignError};
+
+#[derive(Debug, StructOpt)]
+#[structopt(name = "CodeSign", version = env!("CARGO_PKG_VERSION"), author = env!("CARGO_PKG_AUTHORS"))]
+struct Opt {
+    #[structopt(short = "v", parse(from_occurrences), help = "Verbosity")]
+    verbosity: u8,
+    #[structopt(name = "file", help = "Files to sign")]
+    files: Vec<String>,
+    #[structopt(name = "digest-algorithm", short = "d", help = "Specify digest algorithm", default_value = "sha256")]
+    digest_algorithm: String,
+    #[structopt(name = "certificate-thumbprint", short = "c", help = "Specify certificate thumbprint (SHA1)")]
+    certificate_thumbprint: String,
+    #[structopt(name = "timestamp-url", short = "t", help = "Specify timestamp URL")]
+    timestamp_url: Option<String>,
+}
 
 fn main() {
     use std::process;
 
-    use clap::{App, Arg};
-
-    let matches = App::new("codesign")
-        .version(env!("CARGO_PKG_VERSION"))
-        .author(env!("CARGO_PKG_AUTHORS"))
-        .arg(
-            Arg::with_name("v")
-                .short("v")
-                .multiple(true)
-                .help("Sets the level of verbosity"),
-        )
-        .arg(
-            Arg::with_name("file")
-                .help("Files to sign")
-                .required(true)
-                .multiple(true),
-        )
-        .arg(
-            Arg::with_name("digest-algorithm")
-                .short("d")
-                .takes_value(true)
-                .default_value("sha256")
-                .required(true)
-                .help("Specify digest algorithm"),
-        )
-        .arg(
-            Arg::with_name("certificate-thumbprint")
-                .short("c")
-                .takes_value(true)
-                .required(true)
-                .help("Specify certificate thumbprint (SHA1)"),
-        )
-        .arg(
-            Arg::with_name("timestamp-url")
-                .short("t")
-                .takes_value(true)
-                .help("Specify timestamp URL"),
-        )
-        .get_matches();
+    let opt = Opt::from_args();
 
     // Vary the output based on how many times the user used the "verbose" flag
     // (i.e. 'myprog -v -v -v' or 'myprog -vvv' vs 'myprog -v'
-    let log_level = match matches.occurrences_of("v") {
+    let log_level = match opt.verbosity {
         0 => LevelFilter::Off,
-        1 => LevelFilter::Warn,
-        2 => LevelFilter::Info,
-        3 => LevelFilter::Debug,
-        4 | _ => LevelFilter::Trace,
+        1 => LevelFilter::Error,
+        2 => LevelFilter::Warn,
+        3 => LevelFilter::Info,
+        4 => LevelFilter::Debug,
+        5 | _ => LevelFilter::Trace,
     };
 
+    // Initialize logging
     initialize_logging(log_level);
 
     debug!("Debug logging enabled.");
 
-    let files = matches.values_of("file").expect("No files specified!").into_iter();
-    let digest_algorithm: &str = matches.value_of("digest-algorithm").unwrap();
-    let certificate_thumbprint: &str = matches.value_of("certificate-thumbprint").unwrap();
-    let timestamp_url: Option<&str> = matches.value_of("timestamp-url");
+    let files = &opt.files;
+    let digest_algorithm = &opt.digest_algorithm;
+    let certificate_thumbprint = &opt.certificate_thumbprint;
+    let timestamp_url = &opt.timestamp_url;
 
     // Locate latest SignTool
     let signtool = match SignTool::locate_latest() {

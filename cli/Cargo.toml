@@ -12,7 +12,7 @@ path = "src/main.rs"
 
 [dependencies]
 chrono = "0.4.19"
-clap = "2.33.3"
 codesign = { path = "../lib" }
 fern = "0.6.0"
 log = "0.4.11"
+structopt = "0.3.20"
