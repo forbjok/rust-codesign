@@ -113,9 +113,13 @@ fn main() {
 fn initialize_logging(our_level_filter: LevelFilter) {
     use chrono::Utc;
 
+    const BIN_MODULE: &str = env!("CARGO_CRATE_NAME");
+    const LIB_MODULE: &str = "codesign";
+
     fern::Dispatch::new()
-        .level(LevelFilter::Off)
-        .level_for(env!("CARGO_PKG_NAME"), our_level_filter)
+        .level(LevelFilter::Error)
+        .level_for(BIN_MODULE, our_level_filter)
+        .level_for(LIB_MODULE, our_level_filter)
         .chain(std::io::stderr())
         .format(|out, message, record| {
             out.finish(format_args!(

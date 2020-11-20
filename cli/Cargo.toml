@@ -1,0 +1,18 @@
+[package]
+name = "codesign-cli"
+version = "0.1.1"
+authors = ["Kjartan F. Kvamme <forbjok@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[[bin]]
+name = "codesign"
+path = "src/main.rs"
+
+[dependencies]
+chrono = "0.4.19"
+clap = "2.33.3"
+codesign = { path = "../lib" }
+fern = "0.6.0"
+log = "0.4.11"
