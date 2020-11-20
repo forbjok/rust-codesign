@@ -1,6 +1,6 @@
 [package]
 name = "codesign-cli"
-version = "0.1.1"
+version = "0.2.0"
 authors = ["Kjartan F. Kvamme <forbjok@gmail.com>"]
 edition = "2018"
 
