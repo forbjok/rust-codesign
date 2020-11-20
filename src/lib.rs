@@ -1,12 +1,7 @@
-extern crate bitness;
-#[macro_use] extern crate failure;
-#[macro_use] extern crate log;
-extern crate winreg;
-
-mod result;
+mod error;
 mod signtool;
 
-pub use result::*;
+pub use error::*;
 pub use signtool::*;
 
 pub struct SignParams {

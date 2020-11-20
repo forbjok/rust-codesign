@@ -1,11 +1,4 @@
-extern crate chrono;
-extern crate clap;
-extern crate fern;
-#[macro_use] extern crate log;
-
-extern crate codesign;
-
-use log::LevelFilter;
+use log::{debug, LevelFilter};
 
 use codesign::{SignParams, SignTool, CodeSignError};
 
@@ -119,7 +112,6 @@ fn main() {
 
 fn initialize_logging(our_level_filter: LevelFilter) {
     use chrono::Utc;
-    use log::LevelFilter;
 
     fern::Dispatch::new()
         .level(LevelFilter::Off)

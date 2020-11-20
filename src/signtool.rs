@@ -1,23 +1,24 @@
 use std::path::{Path, PathBuf};
 
 use bitness::{self, Bitness};
+use log::{debug, error, info};
 use winreg::RegKey;
 use winreg::enums::{HKEY_LOCAL_MACHINE, KEY_READ, KEY_WOW64_32KEY};
 
-use ::*;
+use crate::*;
 
 pub struct SignTool {
     signtool_path: PathBuf,
 }
 
 impl SignTool {
-    pub fn locate_latest() -> CodeSignResult<SignTool> {
+    pub fn locate_latest() -> Result<SignTool, CodeSignError> {
         Ok(SignTool {
             signtool_path: locate_signtool()?,
         })
     }
 
-    pub fn sign<P: AsRef<Path>>(&self, path: P, params: &SignParams) -> CodeSignResult<()> {
+    pub fn sign<P: AsRef<Path>>(&self, path: P, params: &SignParams) -> Result<(), CodeSignError> {
         use std::process::Command;
 
         // Convert path to string reference, as we need to pass it as a commandline parameter to signtool
@@ -57,7 +58,7 @@ impl SignTool {
     }
 }
 
-fn locate_signtool() -> CodeSignResult<PathBuf> {
+fn locate_signtool() -> Result<PathBuf, CodeSignError> {
     const INSTALLED_ROOTS_REGKEY_PATH: &str = r"SOFTWARE\Microsoft\Windows Kits\Installed Roots";
     const KITS_ROOT_REGVALUE_NAME: &str = r"KitsRoot10";
 
