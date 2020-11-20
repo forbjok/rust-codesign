@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use log::{debug, LevelFilter};
 use structopt::StructOpt;
 
@@ -8,7 +10,7 @@ use codesign::{CodeSignError, SignParams, SignTool};
 struct Opt {
     #[structopt(short = "v", parse(from_occurrences), help = "Verbosity")]
     verbosity: u8,
-    #[structopt(name = "file", help = "Files to sign")]
+    #[structopt(name = "file", help = "Files to sign (supports glob patterns)")]
     files: Vec<String>,
     #[structopt(
         name = "digest-algorithm",
@@ -48,7 +50,15 @@ fn main() {
 
     debug!("Debug logging enabled.");
 
-    let files = &opt.files;
+    // Transform list of glob patterns into a list of actual file paths
+    let files: Vec<PathBuf> = opt
+        .files
+        .into_iter()
+        .filter_map(|pattern| glob::glob(&pattern).ok())
+        .flat_map(|glob_paths| glob_paths.into_iter())
+        .filter_map(|path| path.ok())
+        .collect();
+
     let digest_algorithm = &opt.digest_algorithm;
     let certificate_thumbprint = &opt.certificate_thumbprint;
     let timestamp_url = &opt.timestamp_url;
@@ -77,7 +87,7 @@ fn main() {
 
     // Sign specified files
     for file in files {
-        eprint!("Signing {}... ", file);
+        eprint!("Signing {}... ", file.display());
 
         match signtool.sign(file, &sign_params) {
             Ok(()) => eprintln!("OK."),

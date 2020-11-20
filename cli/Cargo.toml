@@ -14,5 +14,6 @@ path = "src/main.rs"
 chrono = "0.4.19"
 codesign = { path = "../lib" }
 fern = "0.6.0"
+glob = "0.3.0"
 log = "0.4.11"
 structopt = "0.3.20"
