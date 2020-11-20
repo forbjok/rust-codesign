@@ -6,7 +6,7 @@ edition = "2018"
 license = "MIT/Apache-2.0"
 description = "Microsoft code signing library (and utility) for Rust"
 repository = "https://github.com/forbjok/rust-codesign"
-readme = "README.md"
+readme = "../README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
