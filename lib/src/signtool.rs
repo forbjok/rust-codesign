@@ -21,9 +21,6 @@ impl SignTool {
     pub fn sign<P: AsRef<Path>>(&self, path: P, params: &SignParams) -> Result<(), CodeSignError> {
         use std::process::Command;
 
-        // Convert path to string reference, as we need to pass it as a commandline parameter to signtool
-        let path_str = path.as_ref().to_str().unwrap();
-
         // Construct SignTool command
         let mut cmd = Command::new(&self.signtool_path);
         cmd.arg("sign");
@@ -34,7 +31,7 @@ impl SignTool {
             cmd.args(&["/t", timestamp_url]);
         }
 
-        cmd.arg(path_str);
+        cmd.arg(path.as_ref());
 
         debug!("Executing SignTool command: {:?}", cmd);
 
