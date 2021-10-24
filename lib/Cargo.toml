@@ -2,7 +2,7 @@
 name = "codesign"
 version = "0.2.1"
 authors = ["Kjartan F. Kvamme <forbjok@gmail.com>"]
-edition = "2018"
+edition = "2021"
 license = "MIT/Apache-2.0"
 description = "Microsoft code signing library (and utility) for Rust"
 repository = "https://github.com/forbjok/rust-codesign"
